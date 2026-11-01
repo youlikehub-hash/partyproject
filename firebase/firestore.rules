@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function: check if caller is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function: check if caller has elevated GLOBAL_ADMIN role (e.g. Sandeep)
+    function isGlobalAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'GLOBAL_ADMIN' ||
+        request.auth.token.username == 'Admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'GLOBAL_ADMIN'
+      );
+    }
+
+    // Helper function: check if caller is party host or admin
+    function isPartyHost(partyId) {
+      return isAuthenticated() && (
+        isGlobalAdmin() ||
+        get(/databases/$(database)/documents/parties/$(partyId)).data.hostUserId == request.auth.uid
+      );
+    }
+
+    // Helper function: check if caller is member of party
+    function isPartyMember(partyId) {
+      return isAuthenticated() && (
+        isGlobalAdmin() ||
+        exists(/databases/$(database)/documents/parties/$(partyId)/members/$(request.auth.uid))
+      );
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (request.auth.uid == userId || isGlobalAdmin());
+      allow update: if isAuthenticated() && (
+        isGlobalAdmin() || 
+        (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))
+      );
+      allow delete: if isGlobalAdmin();
+    }
+
+    // Parties Collection
+    match /parties/{partyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (
+        request.resource.data.hostUserId == request.auth.uid || isGlobalAdmin()
+      );
+      allow update: if isPartyHost(partyId);
+      allow delete: if isPartyHost(partyId) || isGlobalAdmin();
+
+      // Subcollection: Party Members
+      match /members/{memberId} {
+        allow read: if isAuthenticated();
+        allow write: if isPartyHost(partyId);
+      }
+    }
+
+    // Expenses Collection
+    match /expenses/{expenseId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (
+        request.resource.data.payerId == request.auth.uid || 
+        isPartyHost(request.resource.data.partyId)
+      );
+      allow update, delete: if isAuthenticated() && (
+        isGlobalAdmin() ||
+        resource.data.payerId == request.auth.uid ||
+        isPartyHost(resource.data.partyId)
+      );
+    }
+
+    // Audit Logs Collection (Only Sandeep / Global Admin has read access; system writes)
+    match /auditLogs/{logId} {
+      allow read: if isGlobalAdmin();
+      allow write: if isAuthenticated();
+    }
+  }
+}
+

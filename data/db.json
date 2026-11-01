@@ -1,0 +1,143 @@
+{
+  "users": [
+    {
+      "id": "usr_admin_sandeep",
+      "mobileNumber": "Admin",
+      "password": "$2a$10$MCEX6kvBkKpDZV2FXiH5WueI7DRC2B.ixZh5LhXIimje2fbLKmTGO",
+      "name": "Sandeep",
+      "role": "ADMIN",
+      "status": "ACTIVE",
+      "createdAt": "2026-01-01T10:00:00.000Z"
+    },
+    {
+      "id": "usr_rahul_sharma",
+      "mobileNumber": "9876543210",
+      "password": "$2a$10$MCEX6kvBkKpDZV2FXiH5WueI7DRC2B.ixZh5LhXIimje2fbLKmTGO",
+      "name": "Rahul Sharma",
+      "role": "USER",
+      "status": "ACTIVE",
+      "createdAt": "2026-02-15T12:00:00.000Z"
+    },
+    {
+      "id": "usr_priya_patel",
+      "mobileNumber": "9812345678",
+      "password": "$2a$10$MCEX6kvBkKpDZV2FXiH5WueI7DRC2B.ixZh5LhXIimje2fbLKmTGO",
+      "name": "Priya Patel",
+      "role": "USER",
+      "status": "ACTIVE",
+      "createdAt": "2026-02-20T14:30:00.000Z"
+    },
+    {
+      "id": "usr_amit_kumar",
+      "mobileNumber": "9823456789",
+      "password": "$2a$10$MCEX6kvBkKpDZV2FXiH5WueI7DRC2B.ixZh5LhXIimje2fbLKmTGO",
+      "name": "Amit Kumar",
+      "role": "USER",
+      "status": "PENDING",
+      "createdAt": "2026-10-31T09:15:00.000Z"
+    },
+    {
+      "id": "usr_vikram_verma",
+      "mobileNumber": "9834567890",
+      "password": "$2a$10$MCEX6kvBkKpDZV2FXiH5WueI7DRC2B.ixZh5LhXIimje2fbLKmTGO",
+      "name": "Vikram Verma",
+      "role": "USER",
+      "status": "DEACTIVATED",
+      "createdAt": "2026-03-05T11:45:00.000Z"
+    },
+    {
+      "id": "usr_1793538170782_yiru",
+      "mobileNumber": "9938170555",
+      "password": "$2a$10$I2Jjtc6GCkUx8boep2rgu.YC5eloTT1r./udQyD8s/rmF5XVEYRYa",
+      "name": "Kavita Sen",
+      "role": "USER",
+      "status": "ACTIVE",
+      "createdAt": "2026-11-01T13:02:50.782Z",
+      "updatedAt": "2026-11-01T13:02:51.547Z"
+    }
+  ],
+  "parties": [
+    {
+      "id": "pty_1793538320199_fla6",
+      "hostId": "usr_rahul_sharma",
+      "hostName": "Rahul Sharma",
+      "date": "2026-11-17T00:00:00.000Z",
+      "hotelName": "asdasd",
+      "amountSpent": 1000,
+      "remarks": "asdsads",
+      "billImageUrl": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80",
+      "status": "PENDING",
+      "createdAt": "2026-11-01T13:05:20.200Z"
+    },
+    {
+      "id": "pty_1793538171743_p2xe",
+      "hostId": "usr_1793538170782_yiru",
+      "hostName": "Kavita Sen",
+      "date": "2026-11-01T00:00:00.000Z",
+      "hotelName": "Barbeque Nation, Indiranagar",
+      "amountSpent": 12500,
+      "remarks": "Welcome Treat & Team Lunch",
+      "billImageUrl": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800",
+      "status": "APPROVED",
+      "createdAt": "2026-11-01T13:02:51.743Z",
+      "adminRemarks": "Bill receipt matched with tax invoice. Approved by Sandeep.",
+      "reviewedAt": "2026-11-01T13:02:52.286Z",
+      "reviewedBy": "Sandeep"
+    },
+    {
+      "id": "pty_1793537808375_lpy3",
+      "hostId": "usr_rahul_sharma",
+      "hostName": "Rahul Sharma",
+      "date": "2026-12-01T00:00:00.000Z",
+      "hotelName": "asas",
+      "amountSpent": 12121,
+      "remarks": "dfsdfdsf",
+      "billImageUrl": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80",
+      "status": "PENDING",
+      "createdAt": "2026-11-01T12:56:48.375Z"
+    },
+    {
+      "id": "pty_101",
+      "hostId": "usr_rahul_sharma",
+      "hostName": "Rahul Sharma",
+      "date": "2026-10-18T20:00:00.000Z",
+      "hotelName": "Hotel Royal Orchid, Indiranagar",
+      "amountSpent": 18500,
+      "remarks": "Q3 Project Milestone & Team Release Treat",
+      "billImageUrl": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80",
+      "status": "APPROVED",
+      "adminRemarks": "Tax invoice verified and cleared by Sandeep.",
+      "createdAt": "2026-10-19T10:00:00.000Z",
+      "reviewedAt": "2026-10-19T11:30:00.000Z",
+      "reviewedBy": "Sandeep"
+    },
+    {
+      "id": "pty_102",
+      "hostId": "usr_priya_patel",
+      "hostName": "Priya Patel",
+      "date": "2026-10-24T20:30:00.000Z",
+      "hotelName": "Grand Mercure Hotel, Koramangala",
+      "amountSpent": 24000,
+      "remarks": "Farewell Dinner & Celebration for Senior Architect",
+      "billImageUrl": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80",
+      "status": "APPROVED",
+      "adminRemarks": "Approved by Sandeep. Total budget matched.",
+      "createdAt": "2026-10-25T09:00:00.000Z",
+      "reviewedAt": "2026-10-25T10:15:00.000Z",
+      "reviewedBy": "Sandeep"
+    },
+    {
+      "id": "pty_103",
+      "hostId": "usr_rahul_sharma",
+      "hostName": "Rahul Sharma",
+      "date": "2026-10-30T19:30:00.000Z",
+      "hotelName": "The Black Pearl Pirate Diner, Marathahalli",
+      "amountSpent": 14200,
+      "remarks": "Diwali Pre-Celebration & Buffet for Frontend Squad",
+      "billImageUrl": "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=80",
+      "status": "PENDING",
+      "adminRemarks": "",
+      "createdAt": "2026-10-31T08:00:00.000Z"
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+// Prisma Schema for PartyPilot Production PostgreSQL
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  GLOBAL_ADMIN
+}
+
+enum PartyType {
+  BIRTHDAY
+  HOUSE_PARTY
+  TRIP
+  DINNER
+  FESTIVAL
+  BACHELOR_PARTY
+  OFFICE_PARTY
+  OTHER
+}
+
+enum PartyStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum SplitType {
+  EQUAL
+  EXACT
+  PERCENTAGE
+}
+
+model User {
+  id           String         @id @default(uuid())
+  phoneNumber  String?        @unique
+  username     String?        @unique
+  passwordHash String?
+  displayName  String
+  role         Role           @default(USER)
+  avatarUrl    String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  hostedParties Party[]        @relation("PartyHost")
+  memberships   PartyMember[]
+  paidExpenses  Expense[]      @relation("ExpensePayer")
+  splits        ExpenseSplit[]
+  auditLogs     AuditLog[]
+
+  @@index([phoneNumber])
+  @@index([role])
+}
+
+model Party {
+  id          String         @id @default(uuid())
+  title       String
+  type        PartyType
+  date        DateTime
+  venue       String
+  hostUserId  String
+  status      PartyStatus    @default(UPCOMING)
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  host        User           @relation("PartyHost", fields: [hostUserId], references: [id], onDelete: Cascade)
+  members     PartyMember[]
+  expenses    Expense[]
+  auditLogs   AuditLog[]
+
+  @@index([hostUserId])
+  @@index([status])
+  @@index([date])
+}
+
+model PartyMember {
+  id        String   @id @default(uuid())
+  partyId   String
+  userId    String
+  role      String   @default("MEMBER") // HOST, CO_HOST, MEMBER
+  joinedAt  DateTime @default(now())
+
+  party     Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([partyId, userId])
+  @@index([partyId])
+  @@index([userId])
+}
+
+model Expense {
+  id          String         @id @default(uuid())
+  partyId     String
+  payerId     String
+  title       String
+  amount      Float
+  category    String         @default("General")
+  splitType   SplitType      @default(EQUAL)
+  receiptUrl  String?
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  party       Party          @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  payer       User           @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Restrict)
+  splits      ExpenseSplit[]
+
+  @@index([partyId])
+  @@index([payerId])
+}
+
+model ExpenseSplit {
+  id         String   @id @default(uuid())
+  expenseId  String
+  userId     String
+  amountOwed Float
+  isPaid     Boolean  @default(false)
+  paidAt     DateTime?
+
+  expense    Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, userId])
+  @@index([expenseId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  partyId   String?
+  action    String
+  resource  String
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  party     Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([partyId])
+  @@index([createdAt])
+}
+
