@@ -40,7 +40,7 @@ export default function LoginPage() {
 
         {/* Footer info */}
         <p className="text-center text-xs text-slate-500 mt-6">
-          Zero-DB Local Persistence &bull; Sandeep&apos;s Approval Workflow &bull; File Store (data/db.json)
+          Office Celebrations Ledger &bull; Sandeep&apos;s Approval Workflow &bull; Transparent Records
         </p>
       </div>
     </div>

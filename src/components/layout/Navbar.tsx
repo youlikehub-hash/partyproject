@@ -28,7 +28,7 @@ export function Navbar() {
               OfficePartyLedger
             </span>
             <span className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold hidden sm:inline">
-              Zero-DB File Store
+              Office Celebrations
             </span>
           </div>
         </Link>

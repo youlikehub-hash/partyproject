@@ -11,7 +11,7 @@ import { createExpenseSchema } from "@/lib/validations/expense";
 import { z } from "zod";
 import { PartyMember } from "@/types/party";
 import { SplitType, CreateExpenseInput } from "@/types/expense";
-import { DollarSign, Tag, Check, Users } from "lucide-react";
+import { IndianRupee, Tag, Check, Users } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 type ExpenseFormData = z.infer<typeof createExpenseSchema>;
@@ -157,7 +157,7 @@ export function AddExpenseModal({
             type="number"
             step="0.01"
             placeholder="0.00"
-            leftIcon={<DollarSign className="w-4 h-4" />}
+            leftIcon={<IndianRupee className="w-4 h-4" />}
             error={errors.amount?.message}
             {...register("amount", { valueAsNumber: true })}
           />

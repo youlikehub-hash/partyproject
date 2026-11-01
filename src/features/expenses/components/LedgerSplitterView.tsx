@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ArrowRight, CheckCircle2, DollarSign, Wallet, Check, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, IndianRupee, Wallet, Check, Sparkles } from "lucide-react";
 import { LedgerSummary, DebtSettlement, SettleTransactionInput } from "@/types/expense";
 import { formatCurrency, getInitials, getAvatarColor } from "@/lib/utils";
 import { Button } from "@/components/common/Button";
@@ -68,7 +68,7 @@ export function LedgerSplitterView({
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-fuchsia-500/15 flex items-center justify-center text-fuchsia-400">
-            <DollarSign className="w-6 h-6" />
+            <IndianRupee className="w-6 h-6" />
           </div>
         </div>
 

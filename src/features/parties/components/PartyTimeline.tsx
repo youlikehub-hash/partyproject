@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Party, PartyStatus } from "@/types/ledger";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
@@ -13,12 +13,19 @@ import {
   Clock,
   XCircle,
   ExternalLink,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   PartyPopper,
   Eye,
   Shield,
   Layers,
+  Filter,
+  Users,
+  ChevronDown,
+  ChevronUp,
+  X,
+  PieChart,
+  CalendarDays,
   Sparkles,
 } from "lucide-react";
 import { Modal } from "@/components/common/Modal";
@@ -26,6 +33,12 @@ import Link from "next/link";
 
 interface PartyTimelineProps {
   parties: Party[];
+  currentUser?: {
+    id: string;
+    name: string;
+    role: string;
+    status: string;
+  } | null;
   onOpenSubmitModal?: () => void;
   canSubmit?: boolean;
   isAdmin?: boolean;
@@ -35,6 +48,7 @@ type TabType = "ALL" | "PENDING" | "APPROVED";
 
 export function PartyTimeline({
   parties,
+  currentUser,
   onOpenSubmitModal,
   canSubmit,
   isAdmin,
@@ -44,41 +58,491 @@ export function PartyTimeline({
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null);
   const [detailedParty, setDetailedParty] = useState<Party | null>(null);
 
-  // Counts for each section
-  const totalCount = parties.length;
-  const pendingCount = parties.filter((p) => p.status === "PENDING").length;
-  const approvedCount = parties.filter((p) => p.status === "APPROVED").length;
+  // User and Date Filter States
+  const [selectedHost, setSelectedHost] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+  const [showSpendingBreakdown, setShowSpendingBreakdown] = useState<boolean>(true);
 
-  // Filter based on active section
-  const sectionParties = parties.filter((p) => {
-    if (activeTab === "ALL") return true;
-    if (activeTab === "PENDING") return p.status === "PENDING";
-    if (activeTab === "APPROVED") return p.status === "APPROVED";
-    return true;
-  });
+  // Unique list of all party hosts / colleagues
+  const allHosts = useMemo(() => {
+    const names = new Set<string>();
+    parties.forEach((p) => {
+      if (p.hostName) names.add(p.hostName.trim());
+    });
+    return Array.from(names).sort();
+  }, [parties]);
+
+  // Current Logged-in User personal spending metrics
+  const currentUserStats = useMemo(() => {
+    if (!currentUser) return null;
+    const userParties = parties.filter(
+      (p) =>
+        p.hostName.toLowerCase() === currentUser.name.toLowerCase() ||
+        p.hostId === currentUser.id
+    );
+    const totalSpent = userParties.reduce((sum, p) => sum + p.amountSpent, 0);
+    const approvedSpent = userParties
+      .filter((p) => p.status === "APPROVED")
+      .reduce((sum, p) => sum + p.amountSpent, 0);
+    const pendingSpent = userParties
+      .filter((p) => p.status === "PENDING")
+      .reduce((sum, p) => sum + p.amountSpent, 0);
+
+    return {
+      totalSpent,
+      approvedSpent,
+      pendingSpent,
+      totalParties: userParties.length,
+      approvedCount: userParties.filter((p) => p.status === "APPROVED").length,
+      pendingCount: userParties.filter((p) => p.status === "PENDING").length,
+    };
+  }, [currentUser, parties]);
+
+  // Date-wise spending calculation for ALL users
+  const { dateFilteredParties, userSpendList, totalDateRangeSpent } = useMemo(() => {
+    const filtered = parties.filter((p) => {
+      if (fromDate && p.date < fromDate) return false;
+      if (toDate && p.date > toDate) return false;
+      return true;
+    });
+
+    const spendMap: Record<
+      string,
+      {
+        totalSpent: number;
+        partyCount: number;
+        approvedSpent: number;
+        pendingSpent: number;
+      }
+    > = {};
+
+    filtered.forEach((p) => {
+      const host = p.hostName ? p.hostName.trim() : "Unknown";
+      if (!spendMap[host]) {
+        spendMap[host] = {
+          totalSpent: 0,
+          partyCount: 0,
+          approvedSpent: 0,
+          pendingSpent: 0,
+        };
+      }
+      spendMap[host].totalSpent += p.amountSpent;
+      spendMap[host].partyCount += 1;
+      if (p.status === "APPROVED") {
+        spendMap[host].approvedSpent += p.amountSpent;
+      } else if (p.status === "PENDING") {
+        spendMap[host].pendingSpent += p.amountSpent;
+      }
+    });
+
+    const list = Object.entries(spendMap)
+      .map(([hostName, stats]) => ({ hostName, ...stats }))
+      .sort((a, b) => b.totalSpent - a.totalSpent);
+
+    const totalSpent = filtered.reduce((sum, p) => sum + p.amountSpent, 0);
+
+    return {
+      dateFilteredParties: filtered,
+      userSpendList: list,
+      totalDateRangeSpent: totalSpent,
+    };
+  }, [parties, fromDate, toDate]);
+
+  // Quick Date Range Helpers
+  const handleSetPreset = (preset: "THIS_MONTH" | "LAST_30" | "THIS_YEAR" | "ALL") => {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+
+    if (preset === "ALL") {
+      setFromDate("");
+      setToDate("");
+    } else if (preset === "THIS_MONTH") {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toISOString()
+        .slice(0, 10);
+      setFromDate(firstDay);
+      setToDate(todayStr);
+    } else if (preset === "LAST_30") {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      setFromDate(thirtyDaysAgo.toISOString().slice(0, 10));
+      setToDate(todayStr);
+    } else if (preset === "THIS_YEAR") {
+      const firstDayOfYear = `${today.getFullYear()}-01-01`;
+      setFromDate(firstDayOfYear);
+      setToDate(todayStr);
+    }
+  };
+
+  // Section Counts (respecting date and user filters)
+  const baseFilteredParties = useMemo(() => {
+    return parties.filter((p) => {
+      if (fromDate && p.date < fromDate) return false;
+      if (toDate && p.date > toDate) return false;
+      if (selectedHost && p.hostName.toLowerCase() !== selectedHost.toLowerCase()) {
+        return false;
+      }
+      return true;
+    });
+  }, [parties, fromDate, toDate, selectedHost]);
+
+  const totalCount = baseFilteredParties.length;
+  const pendingCount = baseFilteredParties.filter((p) => p.status === "PENDING").length;
+  const approvedCount = baseFilteredParties.filter((p) => p.status === "APPROVED").length;
+
+  // Filter based on active section tab
+  const sectionParties = useMemo(() => {
+    return baseFilteredParties.filter((p) => {
+      if (activeTab === "ALL") return true;
+      if (activeTab === "PENDING") return p.status === "PENDING";
+      if (activeTab === "APPROVED") return p.status === "APPROVED";
+      return true;
+    });
+  }, [baseFilteredParties, activeTab]);
 
   // Filter based on search keywords
-  const filteredParties = sectionParties.filter(
-    (p) =>
-      p.hotelName.toLowerCase().includes(search.toLowerCase()) ||
-      p.hostName.toLowerCase().includes(search.toLowerCase()) ||
-      p.remarks.toLowerCase().includes(search.toLowerCase())
-  );
+  const finalFilteredParties = useMemo(() => {
+    return sectionParties.filter(
+      (p) =>
+        p.hotelName.toLowerCase().includes(search.toLowerCase()) ||
+        p.hostName.toLowerCase().includes(search.toLowerCase()) ||
+        p.remarks.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [sectionParties, search]);
 
-  // Metrics calculations
-  const totalSpentAll = parties.reduce((sum, p) => sum + p.amountSpent, 0);
-  const totalSpentApproved = parties
+  // Metrics for active section
+  const totalSpentAll = baseFilteredParties.reduce((sum, p) => sum + p.amountSpent, 0);
+  const totalSpentApproved = baseFilteredParties
     .filter((p) => p.status === "APPROVED")
     .reduce((sum, p) => sum + p.amountSpent, 0);
   const avgSpentApproved =
     approvedCount > 0 ? Math.round(totalSpentApproved / approvedCount) : 0;
-  const totalSpentPending = parties
+  const totalSpentPending = baseFilteredParties
     .filter((p) => p.status === "PENDING")
     .reduce((sum, p) => sum + p.amountSpent, 0);
 
+  // Selected Host Stats (when user selects a specific colleague from the filter)
+  const selectedHostStats = useMemo(() => {
+    if (!selectedHost) return null;
+    const userItem = userSpendList.find(
+      (u) => u.hostName.toLowerCase() === selectedHost.toLowerCase()
+    );
+    return (
+      userItem || {
+        hostName: selectedHost,
+        totalSpent: 0,
+        partyCount: 0,
+        approvedSpent: 0,
+        pendingSpent: 0,
+      }
+    );
+  }, [selectedHost, userSpendList]);
+
   return (
     <div className="space-y-6">
-      {/* Metric Highlights */}
+      {/* 1. Particular User Personal Spend Card (when logged in) */}
+      {currentUser && currentUserStats && (
+        <div className="rounded-3xl bg-gradient-to-r from-fuchsia-950/60 via-slate-900 to-slate-900 border border-fuchsia-500/30 p-5 sm:p-6 shadow-xl relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-fuchsia-300 bg-fuchsia-500/20 px-2.5 py-0.5 rounded-full border border-fuchsia-500/30">
+                  Your Personal Spending Summary
+                </span>
+                <span className="text-xs text-slate-400">&bull; {currentUser.name}</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white">
+                Total Money Spent by You:{" "}
+                <span className="text-emerald-400 font-mono">
+                  {formatCurrency(currentUserStats.totalSpent)}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-300">
+                You have hosted <strong>{currentUserStats.totalParties}</strong> office{" "}
+                {currentUserStats.totalParties === 1 ? "celebration" : "celebrations"} (
+                {currentUserStats.approvedCount} approved, {currentUserStats.pendingCount} pending).
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setSelectedHost(currentUser.name);
+                }}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-md ${
+                  selectedHost.toLowerCase() === currentUser.name.toLowerCase()
+                    ? "bg-fuchsia-600 text-white"
+                    : "bg-slate-950 hover:bg-slate-800 text-fuchsia-300 border border-fuchsia-500/30"
+                }`}
+              >
+                {selectedHost.toLowerCase() === currentUser.name.toLowerCase()
+                  ? "Showing Your Parties ✓"
+                  : "Filter to My Parties"}
+              </button>
+
+              {selectedHost && (
+                <button
+                  onClick={() => setSelectedHost("")}
+                  className="px-3 py-2 rounded-2xl text-xs font-semibold text-slate-400 hover:text-white bg-slate-950 border border-slate-800"
+                >
+                  Show All
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Date Range Filter & Colleague Filter Card */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-fuchsia-400" />
+            <h3 className="text-sm sm:text-base font-bold text-white">
+              Date-to-Date & Colleague Spending Filters
+            </h3>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-slate-400 uppercase font-semibold">Presets:</span>
+            <button
+              onClick={() => handleSetPreset("ALL")}
+              className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-colors ${
+                !fromDate && !toDate
+                  ? "bg-fuchsia-600 text-white"
+                  : "bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+              }`}
+            >
+              All Time
+            </button>
+            <button
+              onClick={() => handleSetPreset("THIS_MONTH")}
+              className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-950 text-slate-400 hover:text-white border border-slate-800 transition-colors"
+            >
+              This Month
+            </button>
+            <button
+              onClick={() => handleSetPreset("LAST_30")}
+              className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-950 text-slate-400 hover:text-white border border-slate-800 transition-colors"
+            >
+              Last 30 Days
+            </button>
+            <button
+              onClick={() => handleSetPreset("THIS_YEAR")}
+              className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-950 text-slate-400 hover:text-white border border-slate-800 transition-colors"
+            >
+              This Year
+            </button>
+          </div>
+        </div>
+
+        {/* Date Inputs & User Dropdown */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* From Date */}
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              From Date
+            </label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="w-full h-11 px-3 rounded-2xl bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50"
+            />
+          </div>
+
+          {/* To Date */}
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              To Date
+            </label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="w-full h-11 px-3 rounded-2xl bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50"
+            />
+          </div>
+
+          {/* Colleague / Host Filter */}
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Filter by Colleague (Who Paid)
+            </label>
+            <select
+              value={selectedHost}
+              onChange={(e) => setSelectedHost(e.target.value)}
+              className="w-full h-11 px-3 rounded-2xl bg-slate-950 border border-slate-800 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-fuchsia-500/50"
+            >
+              <option value="">All Colleagues</option>
+              {allHosts.map((host) => (
+                <option key={host} value={host}>
+                  {host}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Selected Filters Chips & Clear */}
+        {(fromDate || toDate || selectedHost) && (
+          <div className="flex items-center justify-between pt-2 flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap text-xs text-slate-300">
+              <span className="text-slate-400">Active Filters:</span>
+              {fromDate && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 font-semibold text-fuchsia-300">
+                  From: {formatDate(fromDate)}
+                </span>
+              )}
+              {toDate && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 font-semibold text-fuchsia-300">
+                  To: {formatDate(toDate)}
+                </span>
+              )}
+              {selectedHost && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 font-semibold text-pink-300">
+                  Colleague: {selectedHost}
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+                setSelectedHost("");
+              }}
+              className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold"
+            >
+              <X className="w-3.5 h-3.5" />
+              Reset All Filters
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 3. Date-to-Date Spending Breakdown Table (All Users Spent) */}
+      <div className="rounded-3xl bg-slate-900 border border-slate-800 p-5 sm:p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2">
+              <PieChart className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-base font-bold text-white">
+                Spending Breakdown by Colleague
+                {fromDate || toDate ? (
+                  <span className="text-xs font-normal text-slate-400 block sm:inline sm:ml-2">
+                    ({fromDate ? formatDate(fromDate) : "Earliest"} &rarr;{" "}
+                    {toDate ? formatDate(toDate) : "Latest"})
+                  </span>
+                ) : (
+                  <span className="text-xs font-normal text-slate-400 block sm:inline sm:ml-2">
+                    (All Time)
+                  </span>
+                )}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Total spent by all colleagues in this range:{" "}
+              <strong className="text-emerald-400 font-mono">
+                {formatCurrency(totalDateRangeSpent)}
+              </strong>
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowSpendingBreakdown(!showSpendingBreakdown)}
+            className="text-xs text-slate-400 hover:text-white flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800"
+          >
+            {showSpendingBreakdown ? (
+              <>
+                <span>Hide Table</span>
+                <ChevronUp className="w-3.5 h-3.5" />
+              </>
+            ) : (
+              <>
+                <span>Show Table</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </>
+            )}
+          </button>
+        </div>
+
+        {showSpendingBreakdown && (
+          <div className="space-y-3 pt-2">
+            {userSpendList.length === 0 ? (
+              <p className="text-xs text-slate-500 py-4 text-center">
+                No spending recorded for this date range.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {userSpendList.map((item) => {
+                  const percent =
+                    totalDateRangeSpent > 0
+                      ? Math.round((item.totalSpent / totalDateRangeSpent) * 100)
+                      : 0;
+                  const isSelected =
+                    selectedHost.toLowerCase() === item.hostName.toLowerCase();
+
+                  return (
+                    <div
+                      key={item.hostName}
+                      onClick={() =>
+                        setSelectedHost(isSelected ? "" : item.hostName)
+                      }
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-fuchsia-950/40 border-fuchsia-500/60 shadow-lg"
+                          : "bg-slate-950/60 border-slate-800 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-fuchsia-600 to-pink-600 flex items-center justify-center text-white font-extrabold text-xs">
+                            {item.hostName.slice(0, 1).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                              <span>{item.hostName}</span>
+                              {isSelected && (
+                                <span className="text-[10px] text-fuchsia-400 bg-fuchsia-500/20 px-1.5 py-0.2 rounded font-semibold">
+                                  Filtered
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-slate-400">
+                              {item.partyCount} {item.partyCount === 1 ? "party" : "parties"} given
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-base font-extrabold text-emerald-400 font-mono block">
+                            {formatCurrency(item.totalSpent)}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block font-semibold">
+                            {percent}% of period total
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 4. Metric Highlights (Rupees Icon) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="p-4 sm:p-5 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-between">
           <div>
@@ -87,6 +551,8 @@ export function PartyTimeline({
                 ? "Pending Spend to Verify"
                 : activeTab === "APPROVED"
                 ? "Total Approved Spend"
+                : selectedHost
+                ? `${selectedHost}'s Spend`
                 : "Total Combined Party Spend"}
             </span>
             <span className="text-2xl font-black text-white mt-1 block">
@@ -104,8 +570,9 @@ export function PartyTimeline({
                 : `${approvedCount} approved celebrations`}
             </span>
           </div>
+          {/* Changed Dollar to Indian Rupee Icon */}
           <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-emerald-400">
-            <DollarSign className="w-6 h-6" />
+            <IndianRupee className="w-6 h-6" />
           </div>
         </div>
 
@@ -152,7 +619,7 @@ export function PartyTimeline({
         </div>
       </div>
 
-      {/* Section Tabs: First is All, Second is Pending for Approval, Third is Approved */}
+      {/* 5. Section Tabs: First is All, Second is Pending for Approval, Third is Approved */}
       <div className="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 flex flex-wrap sm:flex-nowrap gap-1.5 shadow-lg">
         <button
           onClick={() => setActiveTab("ALL")}
@@ -220,7 +687,7 @@ export function PartyTimeline({
         </button>
       </div>
 
-      {/* Search and Action Bar */}
+      {/* 6. Search & Submit Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
@@ -250,13 +717,17 @@ export function PartyTimeline({
         )}
       </div>
 
-      {/* Timeline List */}
-      {filteredParties.length === 0 ? (
+      {/* 7. Timeline List */}
+      {finalFilteredParties.length === 0 ? (
         <div className="text-center py-16 px-4 rounded-3xl bg-slate-900/60 border border-slate-800">
           <Receipt className="w-12 h-12 text-slate-600 mx-auto mb-3" />
           <h4 className="text-base font-bold text-slate-200">
             {search
               ? "No Parties Matched Search"
+              : fromDate || toDate
+              ? "No Parties in this Date Range"
+              : selectedHost
+              ? `No parties recorded for ${selectedHost}`
               : activeTab === "PENDING"
               ? "No Pending Approvals"
               : activeTab === "APPROVED"
@@ -264,8 +735,8 @@ export function PartyTimeline({
               : "No Parties Found"}
           </h4>
           <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            {search
-              ? "Try adjusting your search keywords."
+            {search || fromDate || toDate || selectedHost
+              ? "Try adjusting your dates or filter options above."
               : activeTab === "PENDING"
               ? "All submitted parties have been verified and processed by Sandeep!"
               : activeTab === "APPROVED"
@@ -275,7 +746,7 @@ export function PartyTimeline({
         </div>
       ) : (
         <div className="relative pl-6 sm:pl-8 border-l-2 border-slate-800/80 space-y-6">
-          {filteredParties.map((party) => {
+          {finalFilteredParties.map((party) => {
             const isApproved = party.status === "APPROVED";
             const isPending = party.status === "PENDING";
             const isRejected = party.status === "REJECTED";
@@ -418,12 +889,12 @@ export function PartyTimeline({
         </div>
       )}
 
-      {/* Complete Party Details Modal */}
+      {/* 8. Complete Party Details Modal */}
       <Modal
         isOpen={!!detailedParty}
         onClose={() => setDetailedParty(null)}
         title="Complete Party Details"
-        description="Comprehensive expense and verification record from local storage."
+        description="Comprehensive expense and verification record."
         maxWidth="lg"
       >
         {detailedParty && (
@@ -549,12 +1020,12 @@ export function PartyTimeline({
         )}
       </Modal>
 
-      {/* Bill Receipt Zoom Modal */}
+      {/* 9. Bill Receipt Zoom Modal */}
       <Modal
         isOpen={!!selectedReceiptUrl}
         onClose={() => setSelectedReceiptUrl(null)}
         title="Bill Receipt Verification"
-        description="Original uploaded receipt copy saved in local storage."
+        description="Original uploaded receipt copy."
         maxWidth="lg"
       >
         {selectedReceiptUrl && (

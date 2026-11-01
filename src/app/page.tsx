@@ -58,8 +58,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Transparent, permanent record of all office parties, treats, and milestones.
-              Maintained safely with zero-database overhead via local file store.
+              Transparent, permanent record of all office parties, treats, and milestones with date-wise spending analytics.
             </p>
           </div>
 
@@ -121,6 +120,7 @@ export default function HomePage() {
         ) : (
           <PartyTimeline
             parties={parties}
+            currentUser={user}
             canSubmit={Boolean(user && user.status === "ACTIVE")}
             isAdmin={isAdmin}
             onOpenSubmitModal={() => setIsSubmitModalOpen(true)}

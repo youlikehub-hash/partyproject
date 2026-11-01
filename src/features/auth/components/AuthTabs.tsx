@@ -186,7 +186,7 @@ export function AuthTabs() {
           {/* Quick Demo Credentials */}
           <div className="pt-4 border-t border-slate-800 space-y-2">
             <span className="text-[11px] text-slate-400 block font-semibold uppercase tracking-wider">
-              Quick Test Accounts (Zero-DB / Local File Storage):
+              Quick Test Accounts:
             </span>
             <div className="grid grid-cols-2 gap-1.5 text-xs">
               <button

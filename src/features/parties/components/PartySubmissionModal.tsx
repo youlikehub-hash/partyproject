@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import { Modal } from "@/components/common/Modal";
 import { Input } from "@/components/common/Input";
 import { Button } from "@/components/common/Button";
-import { Calendar, DollarSign, MapPin, Upload, FileText, Image as ImageIcon, X } from "lucide-react";
+import { Calendar, IndianRupee, MapPin, Upload, FileText, Image as ImageIcon, X } from "lucide-react";
 import { partyService } from "../services/partyService";
 import { useToast } from "@/components/common/ToastContext";
 import { Party } from "@/types/ledger";
@@ -130,7 +130,7 @@ export function PartySubmissionModal({
           placeholder="e.g. 15000"
           value={amountSpent}
           onChange={(e) => setAmountSpent(e.target.value)}
-          leftIcon={<DollarSign className="w-4 h-4" />}
+          leftIcon={<IndianRupee className="w-4 h-4" />}
           required
         />
 

@@ -5,7 +5,7 @@ import {
   Calendar,
   MapPin,
   Crown,
-  DollarSign,
+  IndianRupee,
   Shirt,
   Wine,
   Share2,
@@ -138,7 +138,7 @@ export function PartyDetailHeader({
               onClick={onOpenAddExpense}
               variant="glow"
               size="md"
-              leftIcon={<DollarSign className="w-4 h-4" />}
+              leftIcon={<IndianRupee className="w-4 h-4" />}
             >
               Split Expense
             </Button>
@@ -187,7 +187,7 @@ export function PartyDetailHeader({
           {party.metadata?.estimatedBudget && (
             <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-400 shrink-0">
-                <DollarSign className="w-4 h-4" />
+                <IndianRupee className="w-4 h-4" />
               </div>
               <div>
                 <span className="text-[10px] text-slate-400 uppercase font-semibold block">Budget</span>

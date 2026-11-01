@@ -3,9 +3,9 @@ import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "Office Party Ledger — Zero-DB File-Backed Celebration Archive",
+  title: "Office Party Ledger — Celebrations & Expense Archive",
   description:
-    "Mobile-first, production-ready Office Party Ledger with Sandeep's admin approval workflow and local file storage in data/db.json.",
+    "Mobile-first, production-ready Office Party Ledger with Sandeep's admin approval workflow and transparent celebration tracking.",
   icons: {
     icon: "/favicon.ico",
   },

@@ -109,7 +109,7 @@ export function AdminConsole() {
         <div>
           <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
             <Shield className="w-4 h-4" />
-            Zero-DB File Store Management &bull; data/db.json
+            Party Ledger & User Management Console
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
             Sandeep&apos;s Administration Console

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Users, PartyPopper, DollarSign, Activity, ShieldCheck, FileText } from "lucide-react";
+import { Users, PartyPopper, IndianRupee, Activity, ShieldCheck, FileText } from "lucide-react";
 import { SystemMetrics } from "@/types/audit";
 import { formatCurrency } from "@/lib/utils";
 
@@ -29,7 +29,7 @@ export function SystemMetricsCard({ metrics }: SystemMetricsCardProps) {
       label: "Total Expense Volume",
       val: formatCurrency(metrics.totalExpensesAmount),
       sub: `${metrics.totalTransactions} ledger splits`,
-      icon: DollarSign,
+      icon: IndianRupee,
       color: "from-emerald-600/20 to-teal-600/20 border-emerald-500/30 text-emerald-400",
     },
     {

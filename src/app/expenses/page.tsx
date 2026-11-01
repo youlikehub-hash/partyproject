@@ -6,7 +6,7 @@ import { expenseService } from "@/features/expenses/services/expenseService";
 import { Expense } from "@/types/expense";
 import { ExpenseList } from "@/features/expenses/components/ExpenseList";
 import { formatCurrency } from "@/lib/utils";
-import { Receipt, DollarSign, PieChart, ArrowUpRight } from "lucide-react";
+import { Receipt, IndianRupee, PieChart, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 export default function ExpensesOverviewPage() {
